@@ -1,20 +1,17 @@
-﻿using DotNetty.Codecs;
-using DotNetty.Handlers.Timeout;
+﻿using DotNetty.Codecs.Protobuf;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
 using DotNettyServer.DotNetty;
 using DotNettyServer.Models;
 using HandyControl.Data;
+using NetttyModel.Event;
 using NettyModel;
-using NettyModel.Coder;
 using NettyModel.Event;
 using Prism.Commands;
 using Prism.Mvvm;
 using System;
 using System.Collections.ObjectModel;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace DotNettyServer.ViewModel
@@ -90,12 +87,11 @@ namespace DotNettyServer.ViewModel
                 bootstrap.Channel<TcpServerSocketChannel>();
                 bootstrap.ChildHandler(new ActionChannelInitializer<IChannel>(channel =>
                 {
-                    IChannelPipeline pipeline = channel.Pipeline;
-                    pipeline.AddLast(new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 4, 0, 4));
-                    pipeline.AddLast(new MessagePackDecoder());
-                    pipeline.AddLast(new LengthFieldPrepender(4));
-                    pipeline.AddLast(new MessagePackEncoder());
-                    pipeline.AddLast(DotNettyServerHandler);
+                    channel.Pipeline.AddLast(new ProtobufVarint32FrameDecoder())
+                                .AddLast(new ProtobufDecoder(ChatInfo.Parser))
+                                .AddLast(new ProtobufVarint32LengthFieldPrepender())
+                                .AddLast(new ProtobufEncoder())
+                                .AddLast(DotNettyServerHandler);
                 }));
 
                 await bootstrap.BindAsync(ServerPort);
@@ -125,14 +121,14 @@ namespace DotNettyServer.ViewModel
             });
             if (DotNettyServerHandler != null)
             {
-                DotNettyServerHandler.SendData(new NettyBody()
+                DotNettyServerHandler.SendData(new ChatInfo()
                 {
-                    code = (int)NettyCodeEnum.Chat,
-                    time = UtilHelper.GetCurrentTimeStamp(),
-                    msg = "服务器推送",
-                    fromId = "",
-                    reqId = Guid.NewGuid().ToString(),
-                    data = ChatString
+                    Code = (int)NettyCodeEnum.Chat,
+                    Time = UtilHelper.GetCurrentTimeStamp(),
+                    Msg = "服务器推送",
+                    FromId = "",
+                    ReqId = Guid.NewGuid().ToString(),
+                    Data = ChatString
                 });
 
             }
@@ -143,7 +139,7 @@ namespace DotNettyServer.ViewModel
         /// 收到信息
         /// </summary>
         /// <param name="testEvent"></param>
-        private void ReceiveMessage(NettyBody testEvent)
+        private void ReceiveMessage(ChatInfo testEvent)
         {
             if(App.Current==null)
             {
@@ -153,7 +149,7 @@ namespace DotNettyServer.ViewModel
             {
                 ChatInfoModel info = new ChatInfoModel
                 {
-                    Message = testEvent.data,
+                    Message = testEvent.Data,
                     SenderId = "ddd",
                     Type = ChatMessageType.String,
                     Role = ChatRoleType.Receiver

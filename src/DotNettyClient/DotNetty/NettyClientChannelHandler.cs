@@ -1,18 +1,13 @@
-﻿using DotNetty.Handlers.Timeout;
-using DotNetty.Transport.Channels;
-using MessagePack;
+﻿using DotNetty.Transport.Channels;
+using NetttyModel.Event;
 using NettyModel.Event;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace DotNettyClient.DotNetty
 {
-    public class NettyClientChannelHandler : SimpleChannelInboundHandler<Object>
+    public class NettyClientChannelHandler : SimpleChannelInboundHandler<ChatInfo>
     {
         private string serverIP;
         private int serverPort;
@@ -29,34 +24,32 @@ namespace DotNettyClient.DotNetty
         /// </summary>
         /// <param name="ctx">通道处理上下文</param>
         /// <param name="msg">接收内容</param>
-        protected override void ChannelRead0(IChannelHandlerContext ctx, object msg)
+        protected override void ChannelRead0(IChannelHandlerContext ctx, ChatInfo msg)
         {
             try
             {
-                NettyBody testEvent = MessagePackSerializer.Deserialize<NettyBody>(MessagePackSerializer.Serialize(msg));
-
                 // 收到发送给服务端的心跳包，服务端回应
-                if (testEvent.code == (int)NettyCodeEnum.Ping)
+                if (msg.Code == (int)NettyCodeEnum.Ping)
                 {
                     ClientEventHandler.LstSendPings.Clear();
                     ClientEventHandler.RecordLogEvent?.Invoke(true, "收到Android端心跳回应");
                     return;
                 }
                 // 发送数据给服务端，服务端处理成功回应
-                if (testEvent.code == (int)NettyCodeEnum.OK)
+                if (msg.Code == (int)NettyCodeEnum.OK)
                 {
                     lock (ClientEventHandler.LockOjb)
                     {
-                        ClientEventHandler.LstNeedSendDatas.RemoveAll(cu => cu.NettyBody.reqId == testEvent.reqId);
+                        ClientEventHandler.LstNeedSendDatas.RemoveAll(cu => cu.ChatInfo.ReqId == msg.ReqId);
                     }
                     return;
                 }
                 // 收到服务端发送过来的聊天内容
-                if (testEvent.code == (int)NettyCodeEnum.Chat)
+                if (msg.Code == (int)NettyCodeEnum.Chat)
                 {
-                    ClientEventHandler.ReceiveEventFromClientEvent?.Invoke(testEvent);
+                    ClientEventHandler.ReceiveEventFromClientEvent?.Invoke(msg);
                 }
-                var eventMsg = JsonConvert.SerializeObject(testEvent);
+                var eventMsg = JsonConvert.SerializeObject(msg);
                 ClientEventHandler.RecordLogEvent?.Invoke(true, $"收到Android端消息：{eventMsg}");
             }
             catch (Exception ex)
@@ -84,6 +77,7 @@ namespace DotNettyClient.DotNetty
         {
             base.ChannelRegistered(context);
             ClientEventHandler.RecordLogEvent?.Invoke(false, $"注册通道：{context.Channel.RemoteAddress}");
+            ClientEventHandler.RunSendData(context);
         }
 
         /// <summary>
@@ -95,7 +89,6 @@ namespace DotNettyClient.DotNetty
             base.ChannelActive(context);
             ClientEventHandler.RecordLogEvent?.Invoke(false, $"通道激活：{context.Channel.RemoteAddress}");
             ClientEventHandler.IsConnect = true;
-            ClientEventHandler.RunSendData(context);
         }
 
         /// <summary>

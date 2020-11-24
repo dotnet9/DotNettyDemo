@@ -1,20 +1,13 @@
-﻿using DotNetty.Codecs;
-using DotNetty.Handlers.Timeout;
-using DotNetty.Transport.Bootstrapping;
-using DotNetty.Transport.Channels;
-using DotNetty.Transport.Channels.Sockets;
-using DotNettyClient.DotNetty;
+﻿using DotNettyClient.DotNetty;
 using DotNettyClient.Models;
 using HandyControl.Data;
+using NetttyModel.Event;
 using NettyModel;
-using NettyModel.Coder;
 using NettyModel.Event;
 using Prism.Commands;
 using Prism.Mvvm;
 using System;
 using System.Collections.ObjectModel;
-using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -94,7 +87,7 @@ namespace DotNettyClient.ViewModel
                 while (true)
                 {
                     Thread.Sleep(TimeSpan.FromMilliseconds(50));
-                    ClientEventHandler.SendData(new NettyBody()
+                    ClientEventHandler.SendData(new ChatInfo()
                     {
                         code = (int)NettyCodeEnum.Chat,
                         time = UtilHelper.GetCurrentTimeStamp(),
@@ -124,25 +117,25 @@ namespace DotNettyClient.ViewModel
                 };
                 ChatInfos.Add(info);
             });
-            ClientEventHandler.SendData(new NettyBody()
+            ClientEventHandler.SendData(new ChatInfo()
             {
-                code = (int)NettyCodeEnum.Chat,
-                time = UtilHelper.GetCurrentTimeStamp(),
-                msg = "客户端请求",
-                fromId = "",
-                reqId = Guid.NewGuid().ToString(),
-                data = ChatString
+                Code = (int)NettyCodeEnum.Chat,
+                Time = UtilHelper.GetCurrentTimeStamp(),
+                Msg = "客户端请求",
+                FromId = "",
+                ReqId = Guid.NewGuid().ToString(),
+                Data = ChatString
             });
             ChatString = string.Empty;
         }
 
-        private void ReceiveMessage(NettyBody testEvent)
+        private void ReceiveMessage(ChatInfo testEvent)
         {
             App.Current.Dispatcher.Invoke(() =>
             {
                 ChatInfoModel info = new ChatInfoModel
                 {
-                    Message = testEvent.data,
+                    Message = testEvent.Data,
                     SenderId = "ddd",
                     Type = ChatMessageType.String,
                     Role = ChatRoleType.Receiver

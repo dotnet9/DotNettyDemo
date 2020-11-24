@@ -1,7 +1,6 @@
-﻿using DotNetty.Handlers.Timeout;
-using DotNetty.Transport.Channels;
-using DotNetty.Transport.Channels.Groups;
+﻿using DotNetty.Transport.Channels;
 using MessagePack;
+using NetttyModel.Event;
 using NettyModel.Event;
 using Newtonsoft.Json;
 using System;
@@ -11,10 +10,10 @@ namespace DotNettyServer.DotNetty
     /// <summary>
     /// 因为服务器只需要响应传入的消息，所以只需要实现ChannelHandlerAdapter就可以了
     /// </summary>
-    public class NettyServerChannelHandler : SimpleChannelInboundHandler<Object>
+    public class NettyServerChannelHandler : SimpleChannelInboundHandler<ChatInfo>
     {
         private IChannelHandlerContext channelHandlerContext;
-        public event Action<NettyBody> ReceiveEventFromClientEvent;
+        public event Action<ChatInfo> ReceiveEventFromClientEvent;
         //bool:true：正常日志，false:异常日志
         public event Action<bool, string> RecordLogEvent;
 
@@ -23,7 +22,7 @@ namespace DotNettyServer.DotNetty
         /// 发送数据到客户端
         /// </summary>
         /// <param name="testEvent"></param>
-        public void SendData(NettyBody testEvent)
+        public void SendData(ChatInfo testEvent)
         {
             try
             {
@@ -46,31 +45,29 @@ namespace DotNettyServer.DotNetty
         /// </summary>
         /// <param name="ctx"></param>
         /// <param name="msg"></param>
-        protected override void ChannelRead0(IChannelHandlerContext ctx, object msg)
+        protected override void ChannelRead0(IChannelHandlerContext ctx, ChatInfo msg)
         {
             channelHandlerContext = ctx;
             try
             {
-                NettyBody testEvent = MessagePackSerializer.Deserialize<NettyBody>(MessagePackSerializer.Serialize(msg));
-
                 // 服务端收到心跳，直接回应
-                if (testEvent.code == (int)NettyCodeEnum.Ping)
+                if (msg.Code == (int)NettyCodeEnum.Ping)
                 {
                     ctx.WriteAndFlushAsync(msg);
                     RecordLogEvent?.Invoke(true, $"收到心跳并原文回应：{ctx.Channel.RemoteAddress}");
                     return;
                 }
-                if (testEvent.code == (int)NettyCodeEnum.Chat)
+                if (msg.Code == (int)NettyCodeEnum.Chat)
                 {
-                    RecordLogEvent?.Invoke(true, $"服务端接收到聊天消息({ctx.Channel.RemoteAddress}):" + JsonConvert.SerializeObject(testEvent));
+                    RecordLogEvent?.Invoke(true, $"服务端接收到聊天消息({ctx.Channel.RemoteAddress}):" + JsonConvert.SerializeObject(msg));
 
                     // 回应收到消息成功
-                    testEvent.code = (int)NettyCodeEnum.OK;
-                    ctx.WriteAndFlushAsync(testEvent);
-                    ReceiveEventFromClientEvent?.Invoke(testEvent);
+                    msg.Code = (int)NettyCodeEnum.OK;
+                    ctx.WriteAndFlushAsync(msg);
+                    ReceiveEventFromClientEvent?.Invoke(msg);
                     return;
                 }
-                RecordLogEvent?.Invoke(true, $"服务端接收到消息({ctx.Channel.RemoteAddress}):" + JsonConvert.SerializeObject(testEvent));
+                RecordLogEvent?.Invoke(true, $"服务端接收到消息({ctx.Channel.RemoteAddress}):" + JsonConvert.SerializeObject(msg));
 
             }
             catch (Exception ex)

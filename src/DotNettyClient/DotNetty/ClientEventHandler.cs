@@ -1,4 +1,5 @@
 ﻿using DotNetty.Transport.Channels;
+using NetttyModel.Event;
 using NettyModel.Event;
 using Newtonsoft.Json;
 using System;
@@ -47,7 +48,7 @@ namespace DotNettyClient.DotNetty
         /// <summary>
         /// 用于存放需要发送的数据
         /// </summary>
-        public static List<NettyBodyCounter> LstNeedSendDatas = new List<NettyBodyCounter>();
+        public static List<ChatInfoCounter> LstNeedSendDatas = new List<ChatInfoCounter>();
         /// <summary>
         /// 记录日志事件
         /// </summary>
@@ -55,7 +56,7 @@ namespace DotNettyClient.DotNetty
         /// <summary>
         /// 从服务端收到数据
         /// </summary>
-        public static Action<NettyBody> ReceiveEventFromClientEvent;
+        public static Action<ChatInfo> ReceiveEventFromClientEvent;
         /// <summary>
         /// 是否已经连接服务
         /// </summary>
@@ -77,7 +78,11 @@ namespace DotNettyClient.DotNetty
             }
             string guid = System.Guid.NewGuid().ToString();
             LstSendPings.Enqueue(guid);
-            ctx.WriteAndFlushAsync(NettyBody.ping(guid));
+            ctx.WriteAndFlushAsync(new ChatInfo
+            {
+                Code = (int)NettyCodeEnum.Chat,
+                ReqId = Guid.NewGuid().ToString()
+            });
             RecordLogEvent?.Invoke(true, $"发送心跳包，已发送{LstSendPings.Count} 次");
         }
 
@@ -85,14 +90,14 @@ namespace DotNettyClient.DotNetty
         /// <summary>
         /// 发送数据到服务端
         /// </summary>
-        /// <param name="nettyBody"></param>
-        public static void SendData(NettyBody nettyBody)
+        /// <param name="ChatInfo"></param>
+        public static void SendData(ChatInfo ChatInfo)
         {
             try
             {
                 lock (LockOjb)
                 {
-                    LstNeedSendDatas.Add(new NettyBodyCounter { NettyBody = nettyBody });
+                    LstNeedSendDatas.Add(new ChatInfoCounter { ChatInfo = ChatInfo });
                 }
             }
             catch (Exception ex)
@@ -129,24 +134,24 @@ namespace DotNettyClient.DotNetty
                     }
                     try
                     {
-                        NettyBodyCounter sendEvent = null;
+                        ChatInfoCounter sendEvent = null;
                         lock (LockOjb)
                         {
                             for (int i = LstNeedSendDatas.Count - 1; i >= 0; i--)
                             {
-                                var tmpNettyBody = LstNeedSendDatas[i];
-                                if (tmpNettyBody.TryCount >= RETRY_SEND_DATA_TIME)
+                                var tmpChatInfo = LstNeedSendDatas[i];
+                                if (tmpChatInfo.TryCount >= RETRY_SEND_DATA_TIME)
                                 {
-                                    LstNeedSendDatas.Remove(tmpNettyBody);
-                                    RecordLogEvent?.Invoke(false, $"删除超时数据包(已发{tmpNettyBody.TryCount}次)：{JsonConvert.SerializeObject(tmpNettyBody.NettyBody)}");
+                                    LstNeedSendDatas.Remove(tmpChatInfo);
+                                    RecordLogEvent?.Invoke(false, $"删除超时数据包(已发{tmpChatInfo.TryCount}次)：{JsonConvert.SerializeObject(tmpChatInfo.ChatInfo)}");
                                 }
                             }
                             sendEvent = LstNeedSendDatas.FirstOrDefault();
                         }
                         if (sendEvent != null)
                         {
-                            ctx.WriteAndFlushAsync(sendEvent.NettyBody);
-                            RecordLogEvent?.Invoke(true, $"发送到服务端(已发{sendEvent.TryCount}次)：{JsonConvert.SerializeObject(sendEvent.NettyBody)}");
+                            ctx.WriteAndFlushAsync(sendEvent.ChatInfo);
+                            RecordLogEvent?.Invoke(true, $"发送到服务端(已发{sendEvent.TryCount}次)：{JsonConvert.SerializeObject(sendEvent.ChatInfo)}");
                             sendEvent.TryCount++;
                         }
                     }

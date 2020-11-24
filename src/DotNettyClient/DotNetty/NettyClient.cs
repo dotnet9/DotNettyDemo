@@ -1,9 +1,9 @@
-﻿using DotNetty.Codecs;
+﻿using DotNetty.Codecs.Protobuf;
 using DotNetty.Handlers.Timeout;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
-using NettyModel.Coder;
+using NetttyModel.Event;
 using System;
 using System.Net;
 using System.Threading.Tasks;
@@ -40,13 +40,12 @@ namespace DotNettyClient.DotNetty
                         .Option(ChannelOption.ConnectTimeout, TimeSpan.FromSeconds(3))
                     .Handler(new ActionChannelInitializer<ISocketChannel>(channel =>
                     {
-                        IChannelPipeline pipeline = channel.Pipeline;
-                        pipeline.AddLast(new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 4, 0, 4));
-                        pipeline.AddLast(new MessagePackDecoder());
-                        pipeline.AddLast(new LengthFieldPrepender(4));
-                        pipeline.AddLast(new MessagePackEncoder());
-                        pipeline.AddLast(new IdleStateHandler(ClientEventHandler.PING_INTERVAL, 0, 0));
-                        pipeline.AddLast(new NettyClientChannelHandler(serverIP, serverPort));
+                        channel.Pipeline.AddLast(new ProtobufVarint32FrameDecoder())
+                                .AddLast(new ProtobufDecoder(ChatInfo.Parser))
+                                .AddLast(new ProtobufVarint32LengthFieldPrepender())
+                                .AddLast(new ProtobufEncoder())
+                                .AddLast(new IdleStateHandler(ClientEventHandler.PING_INTERVAL, 0, 0))
+                                .AddLast(new NettyClientChannelHandler(serverIP, serverPort));
                     }));
                 ClientEventHandler.RecordLogEvent?.Invoke(false, "尝试连接服务");
                 var waitResult = bootstrap.ConnectAsync(new IPEndPoint(IPAddress.Parse(serverIP), serverPort)).Wait(TimeSpan.FromSeconds(15));
