@@ -80,7 +80,7 @@ namespace DotNettyClient.DotNetty
             LstSendPings.Enqueue(guid);
             ctx.WriteAndFlushAsync(new ChatInfo
             {
-                Code = (int)NettyCodeEnum.Chat,
+                Code = (int)NettyCodeEnum.Ping,
                 ReqId = Guid.NewGuid().ToString()
             });
             RecordLogEvent?.Invoke(true, $"发送心跳包，已发送{LstSendPings.Count} 次");

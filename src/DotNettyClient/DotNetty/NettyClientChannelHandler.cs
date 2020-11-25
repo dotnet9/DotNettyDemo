@@ -1,4 +1,5 @@
-﻿using DotNetty.Transport.Channels;
+﻿using DotNetty.Handlers.Timeout;
+using DotNetty.Transport.Channels;
 using NetttyModel.Event;
 using NettyModel.Event;
 using Newtonsoft.Json;
@@ -140,7 +141,24 @@ namespace DotNettyClient.DotNetty
         public override void UserEventTriggered(IChannelHandlerContext ctx, object evt)
         {
             base.UserEventTriggered(ctx, evt);
-            ClientEventHandler.SendPingMsg(ctx);
+            if (evt is IdleStateEvent)
+            {
+                var eventState = evt as IdleStateEvent;
+                if (eventState != null)
+                {
+                    switch (eventState.State)
+                    {
+                        // 长时间未读取到数据，则发送心跳数据
+                        case IdleState.ReaderIdle:
+                            ClientEventHandler.SendPingMsg(ctx);
+                            break;
+                        case IdleState.WriterIdle:
+                            break;
+                        case IdleState.AllIdle:
+                            break;
+                    }
+                }
+            }
         }
     }
 }
