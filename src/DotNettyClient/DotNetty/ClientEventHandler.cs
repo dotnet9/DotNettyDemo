@@ -58,6 +58,10 @@ namespace DotNettyClient.DotNetty
         /// </summary>
         public static Action<ChatInfo> ReceiveEventFromClientEvent;
         /// <summary>
+        /// 从服务端收到客户端地址
+        /// </summary>
+        public static Action<string> ReceiveOwnerAddressEvent;
+        /// <summary>
         /// 是否已经连接服务
         /// </summary>
         public static bool IsConnect = false;

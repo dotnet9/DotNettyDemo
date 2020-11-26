@@ -40,6 +40,16 @@ namespace DotNettyClient.ViewModel
             set { SetProperty(ref _ServerPort, value); }
         }
 
+        private string _Title = "DotNetty客户端";
+        /// <summary>
+        /// 标题
+        /// </summary>
+
+        public string Title
+        {
+            get { return _Title; }
+            set { SetProperty(ref _Title, value); }
+        }
         private bool _ConnectServerButtonEnabled = true;
         /// <summary>
         /// 连接、关闭服务按钮是否可用
@@ -69,8 +79,20 @@ namespace DotNettyClient.ViewModel
             RaiseConnectServerCommand = new DelegateCommand(RaiseConnectServerHandler);
             RaiseSendStringCommand = new DelegateCommand(RaiseSendStringHandler);
             ClientEventHandler.ReceiveEventFromClientEvent += ReceiveMessage;
+            ClientEventHandler.ReceiveOwnerAddressEvent += ReceiveAddress;
         }
 
+        private void ReceiveAddress(string obj)
+        {
+            if (App.Current == null || App.Current.Dispatcher == null)
+            {
+                return;
+            }
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                this.Title = $"DotNetty客户端：{obj}";
+            });
+        }
 
         /// <summary>
         /// 连接DotNetty服务端
@@ -121,8 +143,8 @@ namespace DotNettyClient.ViewModel
             {
                 Code = (int)NettyCodeEnum.Chat,
                 Time = UtilHelper.GetCurrentTimeStamp(),
-                Msg = "客户端请求",
-                FromId = "",
+                ToId = "服务器",
+                FromId = "客户端",
                 ReqId = Guid.NewGuid().ToString(),
                 Data = ChatString
             });

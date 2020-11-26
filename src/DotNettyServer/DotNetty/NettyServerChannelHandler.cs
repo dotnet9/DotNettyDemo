@@ -4,6 +4,7 @@ using NetttyModel.Event;
 using NettyModel.Event;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Concurrent;
 
 namespace DotNettyServer.DotNetty
 {
@@ -12,8 +13,9 @@ namespace DotNettyServer.DotNetty
     /// </summary>
     public class NettyServerChannelHandler : SimpleChannelInboundHandler<ChatInfo>
     {
-        private IChannelHandlerContext channelHandlerContext;
+        private ConcurrentDictionary<string, IChannelHandlerContext> dictClients = new ConcurrentDictionary<string, IChannelHandlerContext>();
         public event Action<ChatInfo> ReceiveEventFromClientEvent;
+        public event Action<string> ReceiveClientOnlineEvent;
         //bool:true：正常日志，false:异常日志
         public event Action<bool, string> RecordLogEvent;
 
@@ -26,12 +28,17 @@ namespace DotNettyServer.DotNetty
         {
             try
             {
-                if (channelHandlerContext == null)
+                if (dictClients == null || dictClients.Count <= 0)
                 {
                     RecordLogEvent?.Invoke(false, $"未连接客户端，无法发送数据");
                     return;
                 }
-                channelHandlerContext.WriteAndFlushAsync(testEvent);
+                foreach (var kvp in dictClients)
+                {
+                    RecordLogEvent?.Invoke(true, $"向客户端（{kvp.Key}）发送消息：{testEvent.Data}");
+                    testEvent.ToId = kvp.Key;
+                    kvp.Value.WriteAndFlushAsync(testEvent);
+                }
             }
             catch (Exception ex)
             {
@@ -47,7 +54,6 @@ namespace DotNettyServer.DotNetty
         /// <param name="msg"></param>
         protected override void ChannelRead0(IChannelHandlerContext ctx, ChatInfo msg)
         {
-            channelHandlerContext = ctx;
             try
             {
                 // 服务端收到心跳，直接回应
@@ -61,9 +67,21 @@ namespace DotNettyServer.DotNetty
                 {
                     RecordLogEvent?.Invoke(true, $"服务端接收到聊天消息({ctx.Channel.RemoteAddress}):" + JsonConvert.SerializeObject(msg));
 
-                    // 回应收到消息成功
-                    msg.Code = (int)NettyCodeEnum.OK;
-                    ctx.WriteAndFlushAsync(msg);
+                    foreach (var kvp in dictClients)
+                    {
+                        if (ctx.Channel.RemoteAddress.ToString() == kvp.Key)
+                        {
+                            // 回应收到消息成功
+                            msg.Code = (int)NettyCodeEnum.OK;
+                        }
+                        else
+                        {
+                            // 群发消息
+                            msg.Code = (int)NettyCodeEnum.Chat;
+                        }
+                        kvp.Value.WriteAndFlushAsync(msg);
+                    }
+                    msg.FromId = ctx.Channel.RemoteAddress.ToString();
                     ReceiveEventFromClientEvent?.Invoke(msg);
                     return;
                 }
@@ -84,7 +102,7 @@ namespace DotNettyServer.DotNetty
         {
             base.ChannelReadComplete(context);
             context.Flush();
-            RecordLogEvent?.Invoke(true, $"ChannelReadComplete" );
+            RecordLogEvent?.Invoke(true, $"ChannelReadComplete");
         }
 
         /// <summary>
@@ -103,7 +121,10 @@ namespace DotNettyServer.DotNetty
         /// <param name="context"></param>
         public override void ChannelActive(IChannelHandlerContext context)
         {
-            channelHandlerContext = context;
+            var clientAddress = context.Channel.RemoteAddress.ToString();
+            dictClients[clientAddress] = context;
+            ReceiveClientOnlineEvent?.Invoke(clientAddress);
+            RecordLogEvent?.Invoke(true, $"客户端上线：{context.Channel.RemoteAddress}");
             RecordLogEvent?.Invoke(true, $"通道激活：{context.Channel.RemoteAddress}");
             base.ChannelActive(context);
         }

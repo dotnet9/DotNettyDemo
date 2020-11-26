@@ -48,6 +48,7 @@ namespace DotNettyClient.DotNetty
                 // 收到服务端发送过来的聊天内容
                 if (msg.Code == (int)NettyCodeEnum.Chat)
                 {
+                    ClientEventHandler.ReceiveOwnerAddressEvent?.Invoke(msg.ToId);
                     ClientEventHandler.ReceiveEventFromClientEvent?.Invoke(msg);
                 }
                 var eventMsg = JsonConvert.SerializeObject(msg);

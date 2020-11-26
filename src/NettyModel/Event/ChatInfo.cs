@@ -24,14 +24,14 @@ namespace NetttyModel.Event {
     static ChatInfoReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "Cg5DaGF0SW5mby5wcm90bxIRTmV0dHR5TW9kZWwuRXZlbnQiYAoIQ2hhdElu",
-            "Zm8SDAoEQ29kZRgBIAEoBRIMCgRUaW1lGAIgASgDEgsKA01zZxgDIAEoCRIO",
-            "CgZGcm9tSWQYBCABKAkSDQoFUmVxSWQYBSABKAkSDAoERGF0YRgGIAEoCWIG",
-            "cHJvdG8z"));
+            "Cg5DaGF0SW5mby5wcm90bxIRTmV0dHR5TW9kZWwuRXZlbnQiYQoIQ2hhdElu",
+            "Zm8SDAoEQ29kZRgBIAEoBRIMCgRUaW1lGAIgASgDEgwKBFRvSWQYAyABKAkS",
+            "DgoGRnJvbUlkGAQgASgJEg0KBVJlcUlkGAUgASgJEgwKBERhdGEYBiABKAli",
+            "BnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::NetttyModel.Event.ChatInfo), global::NetttyModel.Event.ChatInfo.Parser, new[]{ "Code", "Time", "Msg", "FromId", "ReqId", "Data" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::NetttyModel.Event.ChatInfo), global::NetttyModel.Event.ChatInfo.Parser, new[]{ "Code", "Time", "ToId", "FromId", "ReqId", "Data" }, null, null, null, null)
           }));
     }
     #endregion
@@ -65,7 +65,7 @@ namespace NetttyModel.Event {
     public ChatInfo(ChatInfo other) : this() {
       code_ = other.code_;
       time_ = other.time_;
-      msg_ = other.msg_;
+      toId_ = other.toId_;
       fromId_ = other.fromId_;
       reqId_ = other.reqId_;
       data_ = other.data_;
@@ -99,14 +99,14 @@ namespace NetttyModel.Event {
       }
     }
 
-    /// <summary>Field number for the "Msg" field.</summary>
-    public const int MsgFieldNumber = 3;
-    private string msg_ = "";
+    /// <summary>Field number for the "ToId" field.</summary>
+    public const int ToIdFieldNumber = 3;
+    private string toId_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public string Msg {
-      get { return msg_; }
+    public string ToId {
+      get { return toId_; }
       set {
-        msg_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        toId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -158,7 +158,7 @@ namespace NetttyModel.Event {
       }
       if (Code != other.Code) return false;
       if (Time != other.Time) return false;
-      if (Msg != other.Msg) return false;
+      if (ToId != other.ToId) return false;
       if (FromId != other.FromId) return false;
       if (ReqId != other.ReqId) return false;
       if (Data != other.Data) return false;
@@ -170,7 +170,7 @@ namespace NetttyModel.Event {
       int hash = 1;
       if (Code != 0) hash ^= Code.GetHashCode();
       if (Time != 0L) hash ^= Time.GetHashCode();
-      if (Msg.Length != 0) hash ^= Msg.GetHashCode();
+      if (ToId.Length != 0) hash ^= ToId.GetHashCode();
       if (FromId.Length != 0) hash ^= FromId.GetHashCode();
       if (ReqId.Length != 0) hash ^= ReqId.GetHashCode();
       if (Data.Length != 0) hash ^= Data.GetHashCode();
@@ -195,9 +195,9 @@ namespace NetttyModel.Event {
         output.WriteRawTag(16);
         output.WriteInt64(Time);
       }
-      if (Msg.Length != 0) {
+      if (ToId.Length != 0) {
         output.WriteRawTag(26);
-        output.WriteString(Msg);
+        output.WriteString(ToId);
       }
       if (FromId.Length != 0) {
         output.WriteRawTag(34);
@@ -225,8 +225,8 @@ namespace NetttyModel.Event {
       if (Time != 0L) {
         size += 1 + pb::CodedOutputStream.ComputeInt64Size(Time);
       }
-      if (Msg.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(Msg);
+      if (ToId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(ToId);
       }
       if (FromId.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(FromId);
@@ -254,8 +254,8 @@ namespace NetttyModel.Event {
       if (other.Time != 0L) {
         Time = other.Time;
       }
-      if (other.Msg.Length != 0) {
-        Msg = other.Msg;
+      if (other.ToId.Length != 0) {
+        ToId = other.ToId;
       }
       if (other.FromId.Length != 0) {
         FromId = other.FromId;
@@ -286,7 +286,7 @@ namespace NetttyModel.Event {
             break;
           }
           case 26: {
-            Msg = input.ReadString();
+            ToId = input.ReadString();
             break;
           }
           case 34: {

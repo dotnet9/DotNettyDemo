@@ -2,6 +2,7 @@
 using DotNettyClient.DotNetty;
 using DotNettyClient.ViewModel;
 using Panuon.UI.Silver;
+using System;
 
 namespace DotNettyClient.Views
 {

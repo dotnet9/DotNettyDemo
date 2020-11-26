@@ -18,7 +18,8 @@ namespace DotNettyServer.ViewModel
 {
     public class MainWindowViewModel : BindableBase
     {
-        public ObservableCollection<ChatInfoModel> ChatInfos { get; set; } = new ObservableCollection<ChatInfoModel>();
+        public ObservableCollection<ChatInfoModel> ChatInfos { get; private set; } = new ObservableCollection<ChatInfoModel>();
+        public ObservableCollection<string> ListClients { get; private set; } = new ObservableCollection<string>();
 
         private int _ServerPort = 10086;
         /// <summary>
@@ -69,6 +70,7 @@ namespace DotNettyServer.ViewModel
             RaiseStartServerCommand = new DelegateCommand(RaiseStartServerHandler);
             RaiseSendStringCommand = new DelegateCommand(RaiseSendStringHandler);
             DotNettyServerHandler.ReceiveEventFromClientEvent += ReceiveMessage;
+            DotNettyServerHandler.ReceiveClientOnlineEvent += ReceiveClientOnline;
         }
 
         /// <summary>
@@ -125,8 +127,8 @@ namespace DotNettyServer.ViewModel
                 {
                     Code = (int)NettyCodeEnum.Chat,
                     Time = UtilHelper.GetCurrentTimeStamp(),
-                    Msg = "服务器推送",
-                    FromId = "",
+                    ToId = "所有客户端，实际发送时会赋值客户端地址",
+                    FromId = "服务端",
                     ReqId = Guid.NewGuid().ToString(),
                     Data = ChatString
                 });
@@ -141,7 +143,7 @@ namespace DotNettyServer.ViewModel
         /// <param name="testEvent"></param>
         private void ReceiveMessage(ChatInfo testEvent)
         {
-            if(App.Current==null)
+            if (App.Current == null)
             {
                 return;
             }
@@ -150,11 +152,27 @@ namespace DotNettyServer.ViewModel
                 ChatInfoModel info = new ChatInfoModel
                 {
                     Message = testEvent.Data,
-                    SenderId = "ddd",
+                    SenderId = testEvent.FromId,
                     Type = ChatMessageType.String,
                     Role = ChatRoleType.Receiver
                 };
                 ChatInfos.Add(info);
+            });
+        }
+
+        /// <summary>
+        /// 收到客户端上线信息
+        /// </summary>
+        /// <param name="clientAddress"></param>
+        private void ReceiveClientOnline(string clientAddress)
+        {
+            if (App.Current == null)
+            {
+                return;
+            }
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                ListClients.Add(clientAddress);
             });
         }
     }

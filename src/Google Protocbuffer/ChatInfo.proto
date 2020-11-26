@@ -5,7 +5,7 @@ package NetttyModel.Event;
 message ChatInfo {
   int32 Code = 1;
   int64 Time = 2;
-  string Msg = 3;
+  string ToId = 3;
   string FromId = 4;
   string ReqId = 5;
   string Data = 6;

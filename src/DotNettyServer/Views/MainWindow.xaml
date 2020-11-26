@@ -22,6 +22,7 @@
             <RowDefinition Height="100"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
             <ColumnDefinition Width="300"/>
             <ColumnDefinition Width="100"/>
             <ColumnDefinition Width="*"/>
@@ -32,8 +33,23 @@
             <Button Content="开启服务" IsEnabled="{Binding StartServerButtonEnabled}"
                     Command="{Binding RaiseStartServerCommand}" VerticalAlignment="Center"/>
         </StackPanel>
-        <ListBox Name="ListBoxChat" Grid.Row="1" Grid.ColumnSpan="2" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.CanContentScroll="False" 
-             BorderThickness="0" Style="{StaticResource StackPanelVerticalListBox}" ItemsSource="{Binding ChatInfos}">
+        
+        <StackPanel Grid.Row="1">
+            <TextBlock Text="在线客户端列表："/>
+            <ListBox x:Name="lstClients" ItemsSource="{Binding ListClients}">
+                <ListBox.Resources>
+                    <Style TargetType="ListBox">
+                        <Setter Property="Foreground" Value="Black"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                    </Style>
+                </ListBox.Resources>
+            </ListBox>
+        </StackPanel>
+        
+        <ListBox Name="ListBoxChat" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" 
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.CanContentScroll="False" 
+             BorderThickness="0" Style="{StaticResource StackPanelVerticalListBox}" 
+                 ItemsSource="{Binding ChatInfos}">
             <ListBox.Background>
                 <ImageBrush ImageSource="../Resources/Imgs/chat_back2.jpg" Stretch="UniformToFill"/>
             </ListBox.Background>
@@ -44,14 +60,14 @@
             </ListBox.ItemTemplate>
         </ListBox>
 
-        <TextBox Grid.Row="2" Grid.Column="0" TextWrapping="Wrap" Margin="5" 
+        <TextBox Grid.Row="2" Grid.Column="1" TextWrapping="Wrap" Margin="5" 
                  AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
                  Text="{Binding ChatString}"/>
-        <Button Grid.Row="2" Grid.Column="1" ToolTip="发送" VerticalAlignment="Center" Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+        <Button Grid.Row="2" Grid.Column="2" ToolTip="发送" VerticalAlignment="Center" Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                 Command="{Binding RaiseSendStringCommand}">
             <materialDesign:PackIcon Kind="Send"/>
         </Button>
 
-        <TextBox x:Name="tbLog" Grid.Row="0" Grid.RowSpan="3" Grid.Column="2" Grid.ColumnSpan="2" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+        <TextBox x:Name="tbLog" Grid.Row="0" Grid.RowSpan="3" Grid.Column="3" Grid.ColumnSpan="2" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
     </Grid>
 </pu:WindowX>

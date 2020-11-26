@@ -9,7 +9,7 @@
         xmlns:vm="clr-namespace:DotNettyClient.ViewModel"
         mc:Ignorable="d"
         BorderBrush="#0099FF"
-        Title="DotNetty客户端"
+        Title="{Binding Title}"
         Width="600"
         Height="800"
         WindowState="Maximized"
